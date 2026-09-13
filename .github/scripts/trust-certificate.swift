@@ -37,11 +37,6 @@ let certificateQuery: [CFString: Any] = [
     kSecAttrLabel: "LangSwitch Release Signing",
 ]
 
-let deleteStatus = SecItemDelete(certificateQuery as CFDictionary)
-guard deleteStatus == errSecSuccess || deleteStatus == errSecItemNotFound else {
-    fail("Could not remove an existing release certificate", status: deleteStatus)
-}
-
 let addStatus = SecItemAdd(certificateQuery as CFDictionary, nil)
 guard addStatus == errSecSuccess else {
     fail("Could not add the release certificate to the system Keychain", status: addStatus)
