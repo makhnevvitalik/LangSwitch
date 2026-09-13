@@ -8,7 +8,5 @@
 import AppKit
 
 protocol KeyboardSwitchTrigger {
-    var eventMask: NSEvent.EventTypeMask { get }
-
     mutating func handle(_ event: NSEvent) -> Bool
 }

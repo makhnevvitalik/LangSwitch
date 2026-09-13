@@ -16,10 +16,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusBarMenuController: StatusBarMenuController?
     private let inputSourceSwitcher = InputSourceSwitcher()
     private let keyboardShortcutPreferences = KeyboardShortcutPreferences()
-    private let accessibilityPermissionController = AccessibilityPermissionController()
+    private let inputMonitoringPermissionController = InputMonitoringPermissionController()
     private let functionGlobeSystemBehaviorController = FunctionGlobeSystemBehaviorController()
+    private var isShowingInputMonitoringWarning = false
+    private var isRestarting = false
     private var keyboardShortcutMonitor: KeyboardShortcutMonitor?
-    private let longPressThreshold: TimeInterval = 0.2
+    private var longPressThreshold: TimeInterval {
+        keyboardShortcutPreferences.maximumTapDuration
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusBarMenuController = StatusBarMenuController(
@@ -28,6 +32,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             isLaunchAtLoginEnabled: { Self.isLaunchAtLoginEnabled },
             onModifierShortcutChangeRequested: { [weak self] shortcut, isEnabled in
                 self?.setModifierShortcut(shortcut, isEnabled: isEnabled)
+            },
+            onTapDurationChangeRequested: { [weak self] duration in
+                guard let self else { return }
+                self.keyboardShortcutPreferences.maximumTapDuration = duration
+                self.configureKeyboardShortcutMonitor()
+            },
+            onKeyboardSwitchingStatusRequested: { [weak self] in
+                guard let self else { return false }
+                self.resumeKeyboardSwitchingIfNeeded(showWarning: false)
+                return self.isKeyboardSwitchingPaused
+            },
+            onResumeKeyboardSwitching: { [weak self] in
+                self?.resumeKeyboardSwitchingIfNeeded(showWarning: true)
             },
             onLaunchAtLoginChangeRequested: { [weak self] isEnabled in
                 self?.setLaunchAtLoginEnabled(isEnabled)
@@ -40,7 +57,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         NSApp.hide(nil)
 
-        disableCommandIfAccessibilityUnavailable(showWarning: true)
         disableFunctionGlobeIfUnavailable(showWarning: true)
         promptForLaunchAtLoginIfNeeded()
         configureKeyboardShortcutMonitor()
@@ -53,44 +69,63 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
-    private func configureKeyboardShortcutMonitor() {
-        let triggers = keyboardShortcutPreferences.enabledShortcuts.map {
-            $0.makeTrigger(longPressThreshold: longPressThreshold)
-        }
+    func applicationDidBecomeActive(_ notification: Notification) {
+        resumeKeyboardSwitchingIfNeeded(showWarning: false)
+    }
 
+    private var isKeyboardSwitchingPaused: Bool {
+        !keyboardShortcutPreferences.enabledShortcuts.isEmpty
+            && !(keyboardShortcutMonitor?.isRunning ?? false)
+    }
+
+    private func resumeKeyboardSwitchingIfNeeded(showWarning: Bool) {
+        guard !isRestarting, !isShowingInputMonitoringWarning, isKeyboardSwitchingPaused else { return }
+        configureKeyboardShortcutMonitor(showWarning: showWarning)
+    }
+
+    private func configureKeyboardShortcutMonitor(showWarning: Bool = true) {
         keyboardShortcutMonitor?.stop()
+        keyboardShortcutMonitor = nil
+        let shortcuts = keyboardShortcutPreferences.enabledShortcuts
+        guard !shortcuts.isEmpty else { return }
 
-        guard !triggers.isEmpty else {
-            keyboardShortcutMonitor = nil
-            return
-        }
-
-        keyboardShortcutMonitor = KeyboardShortcutMonitor(
-            triggers: triggers,
+        let monitor = KeyboardShortcutMonitor(
+            shortcuts: shortcuts,
+            longPressThreshold: longPressThreshold,
             onTrigger: { [weak self] in
                 self?.inputSourceSwitcher.switchToNextInputSource()
+            },
+            onUnavailable: { [weak self] in
+                self?.handleInputMonitoringFailure()
             }
         )
-        keyboardShortcutMonitor?.start()
+        keyboardShortcutMonitor = monitor
+        if !monitor.start() {
+            handleInputMonitoringFailure(showWarning: showWarning)
+        }
+    }
+
+    private func stopKeyboardShortcutMonitor() {
+        keyboardShortcutMonitor?.stop()
+        keyboardShortcutMonitor = nil
+    }
+
+    private func handleInputMonitoringFailure(showWarning: Bool = true) {
+        // A successful preflight does not guarantee that an event tap can start
+        // after the user changes permission. Keep the selected keys for recovery.
+        stopKeyboardShortcutMonitor()
+        guard showWarning else { return }
+        showInputMonitoringAccessWarning()
     }
 
     private func setModifierShortcut(_ shortcut: KeyboardModifierShortcut, isEnabled: Bool) {
         guard isEnabled else {
             keyboardShortcutPreferences.setEnabled(false, for: shortcut)
-            configureKeyboardShortcutMonitor()
+            configureKeyboardShortcutMonitor(showWarning: false)
             return
         }
 
-        switch shortcut {
-        case .command:
-            guard accessibilityPermissionController.isTrusted else {
-                keyboardShortcutPreferences.setEnabled(false, for: .command)
-                configureKeyboardShortcutMonitor()
-                showAccessibilityAccessWarning()
-                return
-            }
-
-        case .functionGlobe:
+        if shortcut == .functionGlobe {
             let availability = functionGlobeSystemBehaviorController.trackingAvailability()
             guard case .available = availability else {
                 keyboardShortcutPreferences.setEnabled(false, for: .functionGlobe)
@@ -104,21 +139,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         keyboardShortcutPreferences.setEnabled(true, for: shortcut)
         configureKeyboardShortcutMonitor()
-    }
-
-    private func disableCommandIfAccessibilityUnavailable(showWarning: Bool) {
-        guard keyboardShortcutPreferences.isEnabled(.command),
-              !accessibilityPermissionController.isTrusted else {
-            return
-        }
-
-        keyboardShortcutPreferences.setEnabled(false, for: .command)
-
-        guard showWarning else {
-            return
-        }
-
-        showAccessibilityAccessWarning()
     }
 
     private func disableFunctionGlobeIfUnavailable(showWarning: Bool) {
@@ -139,21 +159,53 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         showFunctionGlobeUnavailableWarning(message: message)
     }
 
-    private func showAccessibilityAccessWarning() {
+    private func showInputMonitoringAccessWarning() {
+        guard !isShowingInputMonitoringWarning, !isRestarting else { return }
+        isShowingInputMonitoringWarning = true
+        statusBarMenuController?.showIcon()
         DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            defer { self.isShowingInputMonitoringWarning = false }
+            guard self.isKeyboardSwitchingPaused else { return }
             NSApp.activate(ignoringOtherApps: true)
-            self?.accessibilityPermissionController.showAccessExplanationAndRequest()
+            self.inputMonitoringPermissionController.showRecoveryOptions { [weak self] in
+                self?.restartApplication()
+            }
         }
     }
 
-    private func showFunctionGlobeUnavailableWarning(message: String? = nil) {
+    private func restartApplication() {
+        guard !isRestarting else { return }
+        isRestarting = true
+        stopKeyboardShortcutMonitor()
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+        configuration.allowsRunningApplicationSubstitution = false
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { [weak self] application, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if application != nil {
+                    NSApp.terminate(nil)
+                } else {
+                    self.isRestarting = false
+                    let alert = NSAlert()
+                    alert.messageText = "Could not restart LangSwitch."
+                    alert.informativeText = error?.localizedDescription
+                        ?? "Quit LangSwitch from its menu, then open it again from Applications."
+                    alert.addButton(withTitle: "OK")
+                    alert.runModal()
+                }
+            }
+        }
+    }
+
+    private func showFunctionGlobeUnavailableWarning(message: String) {
         DispatchQueue.main.async { [weak self] in
             NSApp.activate(ignoringOtherApps: true)
 
             let alert = NSAlert()
             alert.messageText = "Fn/Globe switching was turned off."
             alert.informativeText = message
-                ?? "macOS is using the Fn/Globe key for a system action. In System Settings > Keyboard, set Fn/Globe key action to Do Nothing, then enable Fn/Globe in LangSwitch again."
             alert.addButton(withTitle: "Open Keyboard Settings")
             alert.addButton(withTitle: "Later")
 

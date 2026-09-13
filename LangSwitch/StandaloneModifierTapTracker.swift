@@ -21,13 +21,6 @@ struct StandaloneModifierTapTracker: KeyboardSwitchTrigger {
     private var pressStartedAt: TimeInterval?
     private var usedWithAnotherKey = false
 
-    var eventMask: NSEvent.EventTypeMask {
-        let keyboardEvents: NSEvent.EventTypeMask = [.flagsChanged, .keyDown]
-        return modifierFlag == .command
-            ? keyboardEvents.union([.leftMouseDown, .rightMouseDown, .otherMouseDown])
-            : keyboardEvents
-    }
-
     init(keyCodes: Set<UInt16>,
          modifierFlag: NSEvent.ModifierFlags,
          allowedAdditionalFlags: NSEvent.ModifierFlags = [.capsLock],

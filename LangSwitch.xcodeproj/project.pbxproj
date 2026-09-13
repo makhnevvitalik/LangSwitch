@@ -18,7 +18,7 @@
 		A1B2C3D42D0AF0010000000D /* InputSourceSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF0010000000B /* InputSourceSwitcher.swift */; };
 		A1B2C3D42D0AF0010000000E /* KeyboardSwitchTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF0010000000F /* KeyboardSwitchTrigger.swift */; };
 		A1B2C3D42D0AF00100000010 /* KeyboardShortcutPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000011 /* KeyboardShortcutPreferences.swift */; };
-		A1B2C3D42D0AF00100000012 /* AccessibilityPermissionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000013 /* AccessibilityPermissionController.swift */; };
+		A1B2C3D42D0AF00100000012 /* InputMonitoringPermissionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000013 /* InputMonitoringPermissionController.swift */; };
 		A1B2C3D42D0AF00100000014 /* FunctionGlobeSystemBehaviorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000015 /* FunctionGlobeSystemBehaviorController.swift */; };
 		A1B2C3D42D0AF00100000016 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000017 /* LICENSE */; };
 		A1B2C3D42D0AF00100000018 /* THIRD_PARTY_NOTICES.md in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000019 /* THIRD_PARTY_NOTICES.md */; };
@@ -38,7 +38,7 @@
 		A1B2C3D42D0AF0010000000B /* InputSourceSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSourceSwitcher.swift; sourceTree = "<group>"; };
 		A1B2C3D42D0AF0010000000F /* KeyboardSwitchTrigger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSwitchTrigger.swift; sourceTree = "<group>"; };
 		A1B2C3D42D0AF00100000011 /* KeyboardShortcutPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutPreferences.swift; sourceTree = "<group>"; };
-		A1B2C3D42D0AF00100000013 /* AccessibilityPermissionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionController.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF00100000013 /* InputMonitoringPermissionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMonitoringPermissionController.swift; sourceTree = "<group>"; };
 		A1B2C3D42D0AF00100000015 /* FunctionGlobeSystemBehaviorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionGlobeSystemBehaviorController.swift; sourceTree = "<group>"; };
 		A1B2C3D42D0AF00100000017 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		A1B2C3D42D0AF00100000019 /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
@@ -79,7 +79,7 @@
 				4C79BECD2A553F0D006A793C /* LangSwitchApp.swift */,
 				4C79BECF2A553F0D006A793C /* AppDelegate.swift */,
 				A1B2C3D42D0AF0010000000A /* AboutWindowController.swift */,
-				A1B2C3D42D0AF00100000013 /* AccessibilityPermissionController.swift */,
+				A1B2C3D42D0AF00100000013 /* InputMonitoringPermissionController.swift */,
 				A1B2C3D42D0AF00100000015 /* FunctionGlobeSystemBehaviorController.swift */,
 				A1B2C3D42D0AF0010000000B /* InputSourceSwitcher.swift */,
 				A1B2C3D42D0AF00100000007 /* KeyboardShortcutMonitor.swift */,
@@ -182,7 +182,7 @@
 				A1B2C3D42D0AF0010000000C /* AboutWindowController.swift in Sources */,
 				A1B2C3D42D0AF0010000000D /* InputSourceSwitcher.swift in Sources */,
 				A1B2C3D42D0AF00100000010 /* KeyboardShortcutPreferences.swift in Sources */,
-				A1B2C3D42D0AF00100000012 /* AccessibilityPermissionController.swift in Sources */,
+				A1B2C3D42D0AF00100000012 /* InputMonitoringPermissionController.swift in Sources */,
 				A1B2C3D42D0AF00100000014 /* FunctionGlobeSystemBehaviorController.swift in Sources */,
 				4C79BECE2A553F0D006A793C /* LangSwitchApp.swift in Sources */,
 			);

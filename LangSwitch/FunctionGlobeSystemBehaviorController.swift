@@ -25,13 +25,21 @@ final class FunctionGlobeSystemBehaviorController {
         ]
     }
 
+    private var keyboardSettingsPath: String {
+        if #available(macOS 13.0, *) {
+            return "System Settings > Keyboard"
+        }
+
+        return "System Preferences > Keyboard"
+    }
+
     func trackingAvailability() -> TrackingAvailability {
         guard let currentUsageType = readUsageType() else {
-            return .unavailable("LangSwitch could not read the current Fn/Globe system setting. In System Settings > Keyboard, set Fn/Globe key action to Do Nothing, then enable Fn/Globe in LangSwitch again.")
+            return .unavailable("LangSwitch could not read the current Fn/Globe system setting. In \(keyboardSettingsPath), set the Fn/Globe key action to Do Nothing, then enable Fn/Globe in LangSwitch again.")
         }
 
         guard currentUsageType == Constants.doNothingUsageType else {
-            return .unavailable("macOS is using the Fn/Globe key for a system action. In System Settings > Keyboard, set Fn/Globe key action to Do Nothing, then enable Fn/Globe in LangSwitch again.")
+            return .unavailable("macOS is using the Fn/Globe key for a system action. In \(keyboardSettingsPath), set the Fn/Globe key action to Do Nothing, then enable Fn/Globe in LangSwitch again.")
         }
 
         return .available

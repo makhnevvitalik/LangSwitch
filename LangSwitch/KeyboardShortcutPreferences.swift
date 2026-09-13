@@ -50,10 +50,25 @@ enum KeyboardModifierShortcut: String, CaseIterable {
 }
 
 final class KeyboardShortcutPreferences {
+    static let tapDurationOptions: [TimeInterval] = (1...10).map { Double($0) / 10 }
+    static let defaultTapDuration: TimeInterval = 0.2
+    private static let tapDurationKey = "keyboardShortcut.maximumTapDuration"
+
     private let userDefaults: UserDefaults
 
     init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
+    }
+
+    var maximumTapDuration: TimeInterval {
+        get {
+            let value = userDefaults.double(forKey: Self.tapDurationKey)
+            return Self.tapDurationOptions.contains(value) ? value : Self.defaultTapDuration
+        }
+        set {
+            guard Self.tapDurationOptions.contains(newValue) else { return }
+            userDefaults.set(newValue, forKey: Self.tapDurationKey)
+        }
     }
 
     var enabledShortcuts: [KeyboardModifierShortcut] {

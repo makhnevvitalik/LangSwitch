@@ -11,6 +11,8 @@ import Foundation
 final class StatusBarMenuController: NSObject, NSMenuDelegate {
     private static let hideStatusBarIconKey = "hideStatusBarIcon"
     private static let modifierShortcutsItemIdentifier = NSUserInterfaceItemIdentifier("modifierShortcuts")
+    private static let tapDurationItemIdentifier = NSUserInterfaceItemIdentifier("tapDuration")
+    private static let resumeItemIdentifier = NSUserInterfaceItemIdentifier("resumeKeyboardSwitching")
     private static let launchAtLoginItemIdentifier = NSUserInterfaceItemIdentifier("launchAtLogin")
 
     private let statusBarItem: NSStatusItem
@@ -20,6 +22,9 @@ final class StatusBarMenuController: NSObject, NSMenuDelegate {
     private let isLaunchAtLoginAvailable: () -> Bool
     private let isLaunchAtLoginEnabled: () -> Bool
     private let onModifierShortcutChangeRequested: (KeyboardModifierShortcut, Bool) -> Void
+    private let onTapDurationChangeRequested: (TimeInterval) -> Void
+    private let onKeyboardSwitchingStatusRequested: () -> Bool
+    private let onResumeKeyboardSwitching: () -> Void
     private let onLaunchAtLoginChangeRequested: (Bool) -> Void
     private let onExit: () -> Void
 
@@ -28,6 +33,9 @@ final class StatusBarMenuController: NSObject, NSMenuDelegate {
          isLaunchAtLoginAvailable: @escaping () -> Bool,
          isLaunchAtLoginEnabled: @escaping () -> Bool,
          onModifierShortcutChangeRequested: @escaping (KeyboardModifierShortcut, Bool) -> Void,
+         onTapDurationChangeRequested: @escaping (TimeInterval) -> Void,
+         onKeyboardSwitchingStatusRequested: @escaping () -> Bool,
+         onResumeKeyboardSwitching: @escaping () -> Void,
          onLaunchAtLoginChangeRequested: @escaping (Bool) -> Void,
          onExit: @escaping () -> Void) {
         self.statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -36,6 +44,9 @@ final class StatusBarMenuController: NSObject, NSMenuDelegate {
         self.isLaunchAtLoginAvailable = isLaunchAtLoginAvailable
         self.isLaunchAtLoginEnabled = isLaunchAtLoginEnabled
         self.onModifierShortcutChangeRequested = onModifierShortcutChangeRequested
+        self.onTapDurationChangeRequested = onTapDurationChangeRequested
+        self.onKeyboardSwitchingStatusRequested = onKeyboardSwitchingStatusRequested
+        self.onResumeKeyboardSwitching = onResumeKeyboardSwitching
         self.onLaunchAtLoginChangeRequested = onLaunchAtLoginChangeRequested
         self.onExit = onExit
 
@@ -73,7 +84,14 @@ final class StatusBarMenuController: NSObject, NSMenuDelegate {
             menu.addItem(item)
 
             if index == 0 {
+                let resumeItem = NSMenuItem(title: "Resume Keyboard Switching…",
+                                            action: #selector(resumeKeyboardSwitching), keyEquivalent: "")
+                resumeItem.identifier = Self.resumeItemIdentifier
+                resumeItem.target = self
+                resumeItem.isHidden = true
+                menu.addItem(resumeItem)
                 menu.addItem(makeModifierShortcutsMenuItem())
+                menu.addItem(makeTapDurationMenuItem())
                 menu.addItem(makeLaunchAtLoginMenuItem())
             }
         }
@@ -112,6 +130,39 @@ final class StatusBarMenuController: NSObject, NSMenuDelegate {
         return item
     }
 
+    private func makeTapDurationMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        item.identifier = Self.tapDurationItemIdentifier
+        item.toolTip = "Maximum press duration for Fn/Globe and Command. Switching happens when you release the key."
+        let submenu = NSMenu()
+        for duration in KeyboardShortcutPreferences.tapDurationOptions {
+            let title = String(format: "%.1f s", duration)
+                + (duration == KeyboardShortcutPreferences.defaultTapDuration ? " (Default)" : "")
+            let option = NSMenuItem(title: title, action: #selector(selectTapDuration(_:)), keyEquivalent: "")
+            option.target = self
+            option.representedObject = duration
+            submenu.addItem(option)
+        }
+        item.submenu = submenu
+        updateTapDurationItem(item)
+        return item
+    }
+
+    private func updateTapDurationItem(_ item: NSMenuItem?) {
+        guard let item else { return }
+        let selected = keyboardShortcutPreferences.maximumTapDuration
+        item.title = String(format: "Maximum Tap Duration: %.1f s", selected)
+        item.submenu?.items.forEach { option in
+            option.state = (option.representedObject as? TimeInterval) == selected ? .on : .off
+        }
+    }
+
+    @objc private func selectTapDuration(_ sender: NSMenuItem) {
+        guard let duration = sender.representedObject as? TimeInterval else { return }
+        onTapDurationChangeRequested(duration)
+        updateTapDurationItem(statusBarItem.menu?.items.first { $0.identifier == Self.tapDurationItemIdentifier })
+    }
+
     private func makeLaunchAtLoginMenuItem() -> NSMenuItem {
         let item = NSMenuItem(title: "Launch at Login",
                               action: #selector(toggleLaunchAtLogin(_:)),
@@ -147,10 +198,19 @@ final class StatusBarMenuController: NSObject, NSMenuDelegate {
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        let isPaused = onKeyboardSwitchingStatusRequested()
+        menu.items.first { $0.identifier == Self.resumeItemIdentifier }?.isHidden = !isPaused
+        menu.items.first { $0.identifier == Self.modifierShortcutsItemIdentifier }?.title =
+            isPaused ? "Modifier Shortcuts (Paused)" : "Modifier Shortcuts"
         updateModifierShortcutItems(
             in: menu.items.first { $0.identifier == Self.modifierShortcutsItemIdentifier }?.submenu
         )
+        updateTapDurationItem(menu.items.first { $0.identifier == Self.tapDurationItemIdentifier })
         updateLaunchAtLoginItem(menu.items.first { $0.identifier == Self.launchAtLoginItemIdentifier })
+    }
+
+    @objc private func resumeKeyboardSwitching() {
+        onResumeKeyboardSwitching()
     }
 
     @objc private func showAbout() {
