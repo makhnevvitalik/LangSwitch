@@ -54,17 +54,7 @@ If macOS is using the key for a system action, or LangSwitch cannot read its set
 
 After allowing Input Monitoring, Command does not require any additional system setting.
 
-# P.S.
-MacOS Sonoma has improved language switching. They removed the popup, and switching is faster. But still it can be glitchy and works with bugs from time to time. So this app can still be relevant)
-
-![langswitch-example](assets/langswitch-example.gif)
-
-**How to use:**
-- Download and install the app from the releases page.
-- Disable the default macOS 🌐 button click action in Keyboard settings.
-- Run the LangSwitch app.
-
-# License
+## License
 
 New versions of LangSwitch are licensed under the MIT License + Commons Clause
 License Condition v1.0. This means the MIT License is subject to the Commons
