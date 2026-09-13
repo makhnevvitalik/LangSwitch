@@ -175,7 +175,7 @@ jobs:
 
           cleanup() {
             security list-keychains -d user -s "${original_keychains[@]}" >/dev/null 2>&1 || true
-            security remove-trusted-cert -d "$certificate_pem" >/dev/null 2>&1 || true
+            security remove-trusted-cert "$certificate_pem" >/dev/null 2>&1 || true
             security delete-keychain "$keychain_path" >/dev/null 2>&1 || true
             rm -f "$certificate_path" "$certificate_pem"
           }
@@ -197,7 +197,6 @@ jobs:
             "$keychain_path" \
             > "$certificate_pem"
           security add-trusted-cert \
-            -d \
             -r trustRoot \
             -p codeSign \
             -k "$keychain_path" \
