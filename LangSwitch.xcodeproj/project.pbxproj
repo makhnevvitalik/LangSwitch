@@ -11,24 +11,18 @@
 		4C79BED02A553F0D006A793C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C79BECF2A553F0D006A793C /* AppDelegate.swift */; };
 		4C79BED22A553F0E006A793C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C79BED12A553F0E006A793C /* Assets.xcassets */; };
 		4C79BED52A553F0E006A793C /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C79BED42A553F0E006A793C /* Preview Assets.xcassets */; };
+		A1B2C3D42D0AF00100000001 /* StandaloneModifierTapTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000002 /* StandaloneModifierTapTracker.swift */; };
+		A1B2C3D42D0AF00100000006 /* KeyboardShortcutMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000007 /* KeyboardShortcutMonitor.swift */; };
+		A1B2C3D42D0AF00100000008 /* StatusBarMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000009 /* StatusBarMenuController.swift */; };
+		A1B2C3D42D0AF0010000000C /* AboutWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF0010000000A /* AboutWindowController.swift */; };
+		A1B2C3D42D0AF0010000000D /* InputSourceSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF0010000000B /* InputSourceSwitcher.swift */; };
+		A1B2C3D42D0AF0010000000E /* KeyboardSwitchTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF0010000000F /* KeyboardSwitchTrigger.swift */; };
+		A1B2C3D42D0AF00100000010 /* KeyboardShortcutPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000011 /* KeyboardShortcutPreferences.swift */; };
+		A1B2C3D42D0AF00100000012 /* AccessibilityPermissionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000013 /* AccessibilityPermissionController.swift */; };
+		A1B2C3D42D0AF00100000014 /* FunctionGlobeSystemBehaviorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000015 /* FunctionGlobeSystemBehaviorController.swift */; };
+		A1B2C3D42D0AF00100000016 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000017 /* LICENSE */; };
+		A1B2C3D42D0AF00100000018 /* THIRD_PARTY_NOTICES.md in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42D0AF00100000019 /* THIRD_PARTY_NOTICES.md */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		4C79BEDC2A553F0E006A793C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 4C79BEC22A553F0D006A793C /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 4C79BEC92A553F0D006A793C;
-			remoteInfo = LangSwitch;
-		};
-		4C79BEE62A553F0E006A793C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 4C79BEC22A553F0D006A793C /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 4C79BEC92A553F0D006A793C;
-			remoteInfo = LangSwitch;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		4C79BECA2A553F0D006A793C /* LangSwitch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LangSwitch.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -37,26 +31,21 @@
 		4C79BED12A553F0E006A793C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4C79BED42A553F0E006A793C /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		4C79BED62A553F0E006A793C /* LangSwitch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LangSwitch.entitlements; sourceTree = "<group>"; };
-		4C79BEDB2A553F0E006A793C /* LangSwitchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LangSwitchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		4C79BEE52A553F0E006A793C /* LangSwitchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LangSwitchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B2C3D42D0AF00100000002 /* StandaloneModifierTapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandaloneModifierTapTracker.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF00100000007 /* KeyboardShortcutMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutMonitor.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF00100000009 /* StatusBarMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarMenuController.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF0010000000A /* AboutWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutWindowController.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF0010000000B /* InputSourceSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSourceSwitcher.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF0010000000F /* KeyboardSwitchTrigger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSwitchTrigger.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF00100000011 /* KeyboardShortcutPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutPreferences.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF00100000013 /* AccessibilityPermissionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionController.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF00100000015 /* FunctionGlobeSystemBehaviorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionGlobeSystemBehaviorController.swift; sourceTree = "<group>"; };
+		A1B2C3D42D0AF00100000017 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		A1B2C3D42D0AF00100000019 /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		4C79BEC72A553F0D006A793C /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		4C79BED82A553F0E006A793C /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		4C79BEE22A553F0E006A793C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -69,6 +58,8 @@
 		4C79BEC12A553F0D006A793C = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D42D0AF00100000017 /* LICENSE */,
+				A1B2C3D42D0AF00100000019 /* THIRD_PARTY_NOTICES.md */,
 				4C79BECC2A553F0D006A793C /* LangSwitch */,
 				4C79BECB2A553F0D006A793C /* Products */,
 			);
@@ -78,8 +69,6 @@
 			isa = PBXGroup;
 			children = (
 				4C79BECA2A553F0D006A793C /* LangSwitch.app */,
-				4C79BEDB2A553F0E006A793C /* LangSwitchTests.xctest */,
-				4C79BEE52A553F0E006A793C /* LangSwitchUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -89,6 +78,15 @@
 			children = (
 				4C79BECD2A553F0D006A793C /* LangSwitchApp.swift */,
 				4C79BECF2A553F0D006A793C /* AppDelegate.swift */,
+				A1B2C3D42D0AF0010000000A /* AboutWindowController.swift */,
+				A1B2C3D42D0AF00100000013 /* AccessibilityPermissionController.swift */,
+				A1B2C3D42D0AF00100000015 /* FunctionGlobeSystemBehaviorController.swift */,
+				A1B2C3D42D0AF0010000000B /* InputSourceSwitcher.swift */,
+				A1B2C3D42D0AF00100000007 /* KeyboardShortcutMonitor.swift */,
+				A1B2C3D42D0AF00100000011 /* KeyboardShortcutPreferences.swift */,
+				A1B2C3D42D0AF0010000000F /* KeyboardSwitchTrigger.swift */,
+				A1B2C3D42D0AF00100000009 /* StatusBarMenuController.swift */,
+				A1B2C3D42D0AF00100000002 /* StandaloneModifierTapTracker.swift */,
 				4C79BED12A553F0E006A793C /* Assets.xcassets */,
 				4C79BED62A553F0E006A793C /* LangSwitch.entitlements */,
 				4C79BED32A553F0E006A793C /* Preview Content */,
@@ -124,42 +122,6 @@
 			productReference = 4C79BECA2A553F0D006A793C /* LangSwitch.app */;
 			productType = "com.apple.product-type.application";
 		};
-		4C79BEDA2A553F0E006A793C /* LangSwitchTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 4C79BEF22A553F0E006A793C /* Build configuration list for PBXNativeTarget "LangSwitchTests" */;
-			buildPhases = (
-				4C79BED72A553F0E006A793C /* Sources */,
-				4C79BED82A553F0E006A793C /* Frameworks */,
-				4C79BED92A553F0E006A793C /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				4C79BEDD2A553F0E006A793C /* PBXTargetDependency */,
-			);
-			name = LangSwitchTests;
-			productName = LangSwitchTests;
-			productReference = 4C79BEDB2A553F0E006A793C /* LangSwitchTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		4C79BEE42A553F0E006A793C /* LangSwitchUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 4C79BEF52A553F0E006A793C /* Build configuration list for PBXNativeTarget "LangSwitchUITests" */;
-			buildPhases = (
-				4C79BEE12A553F0E006A793C /* Sources */,
-				4C79BEE22A553F0E006A793C /* Frameworks */,
-				4C79BEE32A553F0E006A793C /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				4C79BEE72A553F0E006A793C /* PBXTargetDependency */,
-			);
-			name = LangSwitchUITests;
-			productName = LangSwitchUITests;
-			productReference = 4C79BEE52A553F0E006A793C /* LangSwitchUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -172,14 +134,6 @@
 				TargetAttributes = {
 					4C79BEC92A553F0D006A793C = {
 						CreatedOnToolsVersion = 14.3.1;
-					};
-					4C79BEDA2A553F0E006A793C = {
-						CreatedOnToolsVersion = 14.3.1;
-						TestTargetID = 4C79BEC92A553F0D006A793C;
-					};
-					4C79BEE42A553F0E006A793C = {
-						CreatedOnToolsVersion = 14.3.1;
-						TestTargetID = 4C79BEC92A553F0D006A793C;
 					};
 				};
 			};
@@ -197,8 +151,6 @@
 			projectRoot = "";
 			targets = (
 				4C79BEC92A553F0D006A793C /* LangSwitch */,
-				4C79BEDA2A553F0E006A793C /* LangSwitchTests */,
-				4C79BEE42A553F0E006A793C /* LangSwitchUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -208,22 +160,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D42D0AF00100000016 /* LICENSE in Resources */,
+				A1B2C3D42D0AF00100000018 /* THIRD_PARTY_NOTICES.md in Resources */,
 				4C79BED52A553F0E006A793C /* Preview Assets.xcassets in Resources */,
 				4C79BED22A553F0E006A793C /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		4C79BED92A553F0E006A793C /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		4C79BEE32A553F0E006A793C /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -235,38 +175,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C79BED02A553F0D006A793C /* AppDelegate.swift in Sources */,
+				A1B2C3D42D0AF00100000006 /* KeyboardShortcutMonitor.swift in Sources */,
+				A1B2C3D42D0AF0010000000E /* KeyboardSwitchTrigger.swift in Sources */,
+				A1B2C3D42D0AF00100000001 /* StandaloneModifierTapTracker.swift in Sources */,
+				A1B2C3D42D0AF00100000008 /* StatusBarMenuController.swift in Sources */,
+				A1B2C3D42D0AF0010000000C /* AboutWindowController.swift in Sources */,
+				A1B2C3D42D0AF0010000000D /* InputSourceSwitcher.swift in Sources */,
+				A1B2C3D42D0AF00100000010 /* KeyboardShortcutPreferences.swift in Sources */,
+				A1B2C3D42D0AF00100000012 /* AccessibilityPermissionController.swift in Sources */,
+				A1B2C3D42D0AF00100000014 /* FunctionGlobeSystemBehaviorController.swift in Sources */,
 				4C79BECE2A553F0D006A793C /* LangSwitchApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4C79BED72A553F0E006A793C /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		4C79BEE12A553F0E006A793C /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		4C79BEDD2A553F0E006A793C /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 4C79BEC92A553F0D006A793C /* LangSwitch */;
-			targetProxy = 4C79BEDC2A553F0E006A793C /* PBXContainerItemProxy */;
-		};
-		4C79BEE72A553F0E006A793C /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 4C79BEC92A553F0D006A793C /* LangSwitch */;
-			targetProxy = 4C79BEE62A553F0E006A793C /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4C79BEED2A553F0E006A793C /* Debug */ = {
@@ -393,9 +315,20 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_ASSET_PATHS = "\"LangSwitch/Preview Content\"";
-				DEVELOPMENT_TEAM = X3Z75V6JU2;
+				DEVELOPMENT_TEAM = P66575H26Z;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = LangSwitch;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -405,8 +338,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11;
-				MARKETING_VERSION = 1.4.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nikeev.LangSwitch;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.makhnevvitalik.LangSwitch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -424,9 +357,20 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_ASSET_PATHS = "\"LangSwitch/Preview Content\"";
-				DEVELOPMENT_TEAM = X3Z75V6JU2;
+				DEVELOPMENT_TEAM = P66575H26Z;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = LangSwitch;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -436,79 +380,11 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11;
-				MARKETING_VERSION = 1.4.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nikeev.LangSwitch;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.makhnevvitalik.LangSwitch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
-		4C79BEF32A553F0E006A793C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nikeev.LangSwitchTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LangSwitch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LangSwitch";
-			};
-			name = Debug;
-		};
-		4C79BEF42A553F0E006A793C /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nikeev.LangSwitchTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LangSwitch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LangSwitch";
-			};
-			name = Release;
-		};
-		4C79BEF62A553F0E006A793C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nikeev.LangSwitchUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = LangSwitch;
-			};
-			name = Debug;
-		};
-		4C79BEF72A553F0E006A793C /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nikeev.LangSwitchUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = LangSwitch;
 			};
 			name = Release;
 		};
@@ -529,24 +405,6 @@
 			buildConfigurations = (
 				4C79BEF02A553F0E006A793C /* Debug */,
 				4C79BEF12A553F0E006A793C /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		4C79BEF22A553F0E006A793C /* Build configuration list for PBXNativeTarget "LangSwitchTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				4C79BEF32A553F0E006A793C /* Debug */,
-				4C79BEF42A553F0E006A793C /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		4C79BEF52A553F0E006A793C /* Build configuration list for PBXNativeTarget "LangSwitchUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				4C79BEF62A553F0E006A793C /* Debug */,
-				4C79BEF72A553F0E006A793C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

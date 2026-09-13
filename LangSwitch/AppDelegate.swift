@@ -1,254 +1,241 @@
 //
-//  ContentView.swift
+//  AppDelegate.swift
 //  LangSwitch
 //
 //  Created by ANTON NIKEEV on 05.07.2023.
+//  Modified by Vitalik Makhnev on 11.06.2026.
 //
 
-import SwiftUI
-import Carbon
-import Foundation
 import AppKit
-import IOKit.hid
+import Foundation
 import ServiceManagement
 
-
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var statusBarItem: NSStatusItem?
-    var aboutWindow: NSWindow?
-    let longPressThreshold: TimeInterval = 0.2;
-    
+    private static let launchAtLoginPromptShownKey = "launchAtLogin.promptShown"
+
+    private var statusBarMenuController: StatusBarMenuController?
+    private let inputSourceSwitcher = InputSourceSwitcher()
+    private let keyboardShortcutPreferences = KeyboardShortcutPreferences()
+    private let accessibilityPermissionController = AccessibilityPermissionController()
+    private let functionGlobeSystemBehaviorController = FunctionGlobeSystemBehaviorController()
+    private var keyboardShortcutMonitor: KeyboardShortcutMonitor?
+    private let longPressThreshold: TimeInterval = 0.2
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // launch at login
-        launchAtLogin()
-        
-        // Create a status bar item with a system icon
-        statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusBarItem?.button?.image = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)
-        statusBarItem?.isVisible = true
-        
-        // Add a menu to the status bar item
-        let menu = NSMenu()
-        menu.addItem(withTitle: "About LangSwitch", action: #selector(showAboutWindow), keyEquivalent: "")
-        menu.addItem(withTitle: "Hide Icon", action: #selector(hideStatusBarIcon), keyEquivalent: "")
-        menu.addItem(withTitle: "Exit", action: #selector(exitAction), keyEquivalent: "")
-        statusBarItem?.menu = menu
-        
-        // hide menu bar if the button was pressed once
-        let userDefaults = UserDefaults.standard
-        if userDefaults.bool(forKey: "hideStatusBarIcon") {
-            statusBarItem?.isVisible = false
-        }
-        
+        statusBarMenuController = StatusBarMenuController(
+            keyboardShortcutPreferences: keyboardShortcutPreferences,
+            isLaunchAtLoginAvailable: { Self.isLaunchAtLoginAvailable },
+            isLaunchAtLoginEnabled: { Self.isLaunchAtLoginEnabled },
+            onModifierShortcutChangeRequested: { [weak self] shortcut, isEnabled in
+                self?.setModifierShortcut(shortcut, isEnabled: isEnabled)
+            },
+            onLaunchAtLoginChangeRequested: { [weak self] isEnabled in
+                self?.setLaunchAtLoginEnabled(isEnabled)
+            },
+            onExit: {
+                NSApplication.shared.terminate(nil)
+            }
+        )
+
         NSApp.setActivationPolicy(.accessory)
         NSApp.hide(nil)
-        
-        var anotherClicked = false;
-        var lastPressTime = Date();
-        
-        // Register for Fn button press events
-        NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { event in
-            guard event.keyCode == 63 else {
+
+        disableCommandIfAccessibilityUnavailable(showWarning: true)
+        disableFunctionGlobeIfUnavailable(showWarning: true)
+        promptForLaunchAtLoginIfNeeded()
+        configureKeyboardShortcutMonitor()
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        statusBarMenuController?.showIcon()
+        NSApp.setActivationPolicy(.accessory)
+        NSApp.hide(nil)
+        return false
+    }
+
+    private func configureKeyboardShortcutMonitor() {
+        let triggers = keyboardShortcutPreferences.enabledShortcuts.map {
+            $0.makeTrigger(longPressThreshold: longPressThreshold)
+        }
+
+        keyboardShortcutMonitor?.stop()
+
+        guard !triggers.isEmpty else {
+            keyboardShortcutMonitor = nil
+            return
+        }
+
+        keyboardShortcutMonitor = KeyboardShortcutMonitor(
+            triggers: triggers,
+            onTrigger: { [weak self] in
+                self?.inputSourceSwitcher.switchToNextInputSource()
+            }
+        )
+        keyboardShortcutMonitor?.start()
+    }
+
+    private func setModifierShortcut(_ shortcut: KeyboardModifierShortcut, isEnabled: Bool) {
+        guard isEnabled else {
+            keyboardShortcutPreferences.setEnabled(false, for: shortcut)
+            configureKeyboardShortcutMonitor()
+            return
+        }
+
+        switch shortcut {
+        case .command:
+            guard accessibilityPermissionController.isTrusted else {
+                keyboardShortcutPreferences.setEnabled(false, for: .command)
+                configureKeyboardShortcutMonitor()
+                showAccessibilityAccessWarning()
                 return
             }
 
-            if event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.function) {
-                anotherClicked = false
-                lastPressTime = Date()
-            }
-
-            if !event.modifierFlags.intersection([.shift, .control, .option, .command]).isEmpty {
-                anotherClicked = true
-            }
-
-            let allowedFlags: NSEvent.ModifierFlags = [.capsLock]
-            let remainingFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting(allowedFlags)
-            if remainingFlags.isEmpty && !anotherClicked {
-                let timePassed = Date().timeIntervalSince(lastPressTime)
-                if timePassed < self.longPressThreshold {
-                    self.switchKeyboardLanguage()
+        case .functionGlobe:
+            let availability = functionGlobeSystemBehaviorController.trackingAvailability()
+            guard case .available = availability else {
+                keyboardShortcutPreferences.setEnabled(false, for: .functionGlobe)
+                configureKeyboardShortcutMonitor()
+                if case .unavailable(let message) = availability {
+                    showFunctionGlobeUnavailableWarning(message: message)
                 }
+                return
+            }
+        }
+
+        keyboardShortcutPreferences.setEnabled(true, for: shortcut)
+        configureKeyboardShortcutMonitor()
+    }
+
+    private func disableCommandIfAccessibilityUnavailable(showWarning: Bool) {
+        guard keyboardShortcutPreferences.isEnabled(.command),
+              !accessibilityPermissionController.isTrusted else {
+            return
+        }
+
+        keyboardShortcutPreferences.setEnabled(false, for: .command)
+
+        guard showWarning else {
+            return
+        }
+
+        showAccessibilityAccessWarning()
+    }
+
+    private func disableFunctionGlobeIfUnavailable(showWarning: Bool) {
+        guard keyboardShortcutPreferences.isEnabled(.functionGlobe) else {
+            return
+        }
+
+        guard case .unavailable(let message) = functionGlobeSystemBehaviorController.trackingAvailability() else {
+            return
+        }
+
+        keyboardShortcutPreferences.setEnabled(false, for: .functionGlobe)
+
+        guard showWarning else {
+            return
+        }
+
+        showFunctionGlobeUnavailableWarning(message: message)
+    }
+
+    private func showAccessibilityAccessWarning() {
+        DispatchQueue.main.async { [weak self] in
+            NSApp.activate(ignoringOtherApps: true)
+            self?.accessibilityPermissionController.showAccessExplanationAndRequest()
+        }
+    }
+
+    private func showFunctionGlobeUnavailableWarning(message: String? = nil) {
+        DispatchQueue.main.async { [weak self] in
+            NSApp.activate(ignoringOtherApps: true)
+
+            let alert = NSAlert()
+            alert.messageText = "Fn/Globe switching was turned off."
+            alert.informativeText = message
+                ?? "macOS is using the Fn/Globe key for a system action. In System Settings > Keyboard, set Fn/Globe key action to Do Nothing, then enable Fn/Globe in LangSwitch again."
+            alert.addButton(withTitle: "Open Keyboard Settings")
+            alert.addButton(withTitle: "Later")
+
+            if alert.runModal() == .alertFirstButtonReturn {
+                self?.functionGlobeSystemBehaviorController.openKeyboardSettings()
             }
         }
     }
-    
-    @objc func showAboutWindow() {
-        if aboutWindow == nil {
-            let windowWidth: CGFloat = 300
-            let windowHeight: CGFloat = 180
-            
-            let windowContent = NSView(frame: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight))
-            let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown version"
 
-            let versionLabel = NSTextField(labelWithString: "LangSwitch v\(version)")
-            versionLabel.frame = NSRect(x: (windowWidth - 150) / 2, y: 130, width: 150, height: 20)
-            versionLabel.alignment = .center // Центрирование текста
-            windowContent.addSubview(versionLabel)
-            
-            let gitHubButton = NSButton(title: "GitHub Page", target: self, action: #selector(openGitHub))
-            gitHubButton.frame = NSRect(x: (windowWidth - 100) / 2, y: 90, width: 100, height: 30)
-            windowContent.addSubview(gitHubButton)
-
-            let checkUpdatesButton = NSButton(title: "Check for Updates", target: self, action: #selector(checkForUpdates))
-            checkUpdatesButton.frame = NSRect(x: (windowWidth - 150) / 2, y: 50, width: 150, height: 30)
-            windowContent.addSubview(checkUpdatesButton)
-
-            aboutWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
-                                   styleMask: [.titled, .closable],
-                                   backing: .buffered,
-                                   defer: false)
-            aboutWindow?.contentView = windowContent
-            aboutWindow?.center()
+    private func promptForLaunchAtLoginIfNeeded() {
+        guard Self.isLaunchAtLoginAvailable else {
+            return
         }
-        aboutWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+
+        let userDefaults = UserDefaults.standard
+        guard !userDefaults.bool(forKey: Self.launchAtLoginPromptShownKey) else {
+            return
+        }
+
+        if Self.isLaunchAtLoginEnabled {
+            userDefaults.set(true, forKey: Self.launchAtLoginPromptShownKey)
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            NSApp.activate(ignoringOtherApps: true)
+
+            let alert = NSAlert()
+            alert.messageText = "Start LangSwitch at login?"
+            alert.informativeText = "LangSwitch can start automatically when you sign in, so keyboard switching is available right away."
+            alert.addButton(withTitle: "Start at Login")
+            alert.addButton(withTitle: "Not Now")
+
+            userDefaults.set(true, forKey: Self.launchAtLoginPromptShownKey)
+
+            if alert.runModal() == .alertFirstButtonReturn {
+                self?.setLaunchAtLoginEnabled(true)
+            }
+        }
     }
-    
-    @objc func launchAtLogin() {
+
+    private static var isLaunchAtLoginAvailable: Bool {
+        if #available(macOS 13.0, *) {
+            return true
+        }
+
+        return false
+    }
+
+    private static var isLaunchAtLoginEnabled: Bool {
+        if #available(macOS 13.0, *) {
+            return SMAppService.mainApp.status == .enabled
+        }
+
+        return false
+    }
+
+    private func setLaunchAtLoginEnabled(_ isEnabled: Bool) {
+        guard Self.isLaunchAtLoginAvailable else {
+            return
+        }
+
         if #available(macOS 13.0, *) {
             do {
-                if SMAppService.mainApp.status == .enabled {
-                    // do nothing
-                    print("Login item already registered.")
-                } else {
+                if isEnabled && SMAppService.mainApp.status != .enabled {
                     try SMAppService.mainApp.register()
+                } else if !isEnabled && SMAppService.mainApp.status == .enabled {
+                    try SMAppService.mainApp.unregister()
                 }
             } catch {
-                print("Failed to enable login item: \(error)")
+                showLaunchAtLoginError(error)
             }
-        } else {
-            // Fallback on earlier versions
-            print("Login item functionality is not available on this version of macOS.")
         }
     }
 
-
-    @objc func openGitHub() {
-        if let url = URL(string: "https://github.com/Nikeev/LangSwitch") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-    
-    @objc func checkForUpdates() {
-        guard let url = URL(string: "https://api.github.com/repos/Nikeev/LangSwitch/releases/latest") else { return }
-
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            guard let data = data, error == nil else {
-                self.showAlert(message: "Failed to check for updates.")
-                return
-            }
-
-            do {
-                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                   let latestVersion = json["tag_name"] as? String {
-                    let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0"
-
-                    if latestVersion > "v\(currentVersion)" {
-                        self.showAlert(message: "New version \(latestVersion) is available! Download it from GitHub.")
-                    } else {
-                        self.showAlert(message: "You're up to date.")
-                    }
-                }
-            } catch {
-                self.showAlert(message: "Error parsing update information.")
-            }
-        }
-        task.resume()
-    }
-    
-    func showAlert(message: String) {
+    private func showLaunchAtLoginError(_ error: Error) {
         DispatchQueue.main.async {
             let alert = NSAlert()
-            alert.messageText = message
+            alert.messageText = "Could not update Launch at Login."
+            alert.informativeText = error.localizedDescription
+            alert.addButton(withTitle: "OK")
             alert.runModal()
         }
-    }
-    
-    @objc func hideStatusBarIcon() {
-        statusBarItem?.isVisible = false
-        let userDefaults = UserDefaults.standard
-        userDefaults.set(true, forKey: "hideStatusBarIcon")
-        UserDefaults.standard.synchronize()
-    }
-    
-    @objc func exitAction() {
-        NSApplication.shared.terminate(nil)
-    }
-    
-    func switchKeyboardLanguage() {
-        // Get the current keyboard input source
-        guard let currentSource = TISCopyCurrentKeyboardInputSource()?.takeUnretainedValue() else {
-            print("Failed to switch keyboard language.")
-            return
-        }
-        
-        // Get all enabled keyboard input sources
-        guard let inputSources = getInputSources() as? [TISInputSource],
-              !inputSources.isEmpty else {
-            print("Failed to switch keyboard language.")
-            return
-        }
-        
-        // Find the index of the current input source
-        guard let currentIndex = inputSources.firstIndex(where: { $0 == currentSource }) else {
-            print("Failed to switch keyboard language.")
-            return
-        }
-        
-        // Calculate the index of the next input source
-        let nextIndex = (currentIndex + 1) % inputSources.count
-        
-        // Retrieve the next input source
-        let nextSource = inputSources[nextIndex]
-        
-        // Switch to the next input source
-        TISSelectInputSource(nextSource)
-        
-        // Print the new input source's name
-        let newSourceName = Unmanaged<CFString>.fromOpaque(TISGetInputSourceProperty(nextSource, kTISPropertyLocalizedName)).takeUnretainedValue() as String
-        print("Switched to: \(newSourceName)")
-    }
-    
-    func getInputSources() -> [TISInputSource] {
-        let inputSourceNSArray = TISCreateInputSourceList(nil, false)
-            .takeRetainedValue() as NSArray
-        var inputSourceList = inputSourceNSArray as! [TISInputSource]
-        
-        inputSourceList = inputSourceList.filter({
-            $0.category == TISInputSource.Category.keyboardInputSource
-        })
-        
-        let inputSources = inputSourceList.filter(
-            {
-                $0.isSelectable
-            })
-        
-        return inputSources
-    }
-}
-
-extension TISInputSource {
-    enum Category {
-        static var keyboardInputSource: String {
-            return kTISCategoryKeyboardInputSource as String
-        }
-    }
-    
-    private func getProperty(_ key: CFString) -> AnyObject? {
-        let cfType = TISGetInputSourceProperty(self, key)
-        if (cfType != nil) {
-            return Unmanaged<AnyObject>.fromOpaque(cfType!)
-                .takeUnretainedValue()
-        } else {
-            return nil
-        }
-    }
-    
-    var category: String {
-        return getProperty(kTISPropertyInputSourceCategory) as! String
-    }
-    
-    var isSelectable: Bool {
-        return getProperty(kTISPropertyInputSourceIsSelectCapable) as! Bool
     }
 }
