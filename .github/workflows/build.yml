@@ -110,6 +110,7 @@ jobs:
           archive="LangSwitch-${version}-unsigned.zip"
           ditto -c -k --sequesterRsrc --keepParent "$app" "unsigned/$archive"
           cp LangSwitch/LangSwitch.entitlements unsigned/LangSwitch.entitlements
+          cp .github/scripts/trust-certificate.swift unsigned/trust-certificate.swift
           unzip -t "unsigned/$archive"
 
       - name: Upload unsigned release app
@@ -120,6 +121,7 @@ jobs:
           path: |
             unsigned/LangSwitch-*-unsigned.zip
             unsigned/LangSwitch.entitlements
+            unsigned/trust-certificate.swift
           if-no-files-found: error
           retention-days: 7
 
@@ -198,7 +200,7 @@ jobs:
             "$keychain_path" \
             > "$certificate_pem"
           openssl x509 -in "$certificate_pem" -outform DER -out "$certificate_der"
-          swiftc -suppress-warnings .github/scripts/trust-certificate.swift -o "$trust_tool"
+          swiftc -suppress-warnings unsigned/trust-certificate.swift -o "$trust_tool"
           sudo "$trust_tool" "$certificate_der"
           security set-key-partition-list \
             -S apple-tool:,apple: \
