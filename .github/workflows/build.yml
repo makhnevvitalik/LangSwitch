@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     tags:
-      - 'v*'
+      - 'v[0-9]*.[0-9]*.[0-9]*'
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -30,6 +30,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Show Xcode version
@@ -84,11 +85,16 @@ jobs:
           print('Update network permissions verified')
           PY
 
-      - name: Prepare release assets
+      - name: Prepare unsigned release app
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Release tag must use the vMAJOR.MINOR.PATCH format." >&2
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Release tag must point to a commit from main." >&2
             exit 1
           fi
 
@@ -100,45 +106,140 @@ jobs:
             exit 1
           fi
 
-          codesign \
-            --force \
-            --sign - \
-            --options runtime \
-            --entitlements LangSwitch/LangSwitch.entitlements \
-            "$app"
-          codesign --verify --deep --strict --verbose=2 "$app"
+          mkdir -p unsigned
+          archive="LangSwitch-${version}-unsigned.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "unsigned/$archive"
+          cp LangSwitch/LangSwitch.entitlements unsigned/LangSwitch.entitlements
+          unzip -t "unsigned/$archive"
 
-          mkdir -p dist
-          archive="LangSwitch-${version}-macos-universal.zip"
-          ditto -c -k --sequesterRsrc --keepParent "$app" "dist/$archive"
-          unzip -t "dist/$archive"
-          (cd dist && shasum -a 256 "$archive" > SHA256SUMS.txt)
-
-      - name: Upload release assets
+      - name: Upload unsigned release app
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: release-assets
+          name: unsigned-release-app
           path: |
-            dist/LangSwitch-*-macos-universal.zip
-            dist/SHA256SUMS.txt
+            unsigned/LangSwitch-*-unsigned.zip
+            unsigned/LangSwitch.entitlements
           if-no-files-found: error
           retention-days: 7
 
   release:
-    name: Publish GitHub Release
+    name: Sign and publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/')
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: macos-26
     timeout-minutes: 10
+    environment: release-signing
     permissions:
       contents: write
     steps:
-      - name: Download release assets
+      - name: Download unsigned release app
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: release-assets
-          path: dist
+          name: unsigned-release-app
+          path: unsigned
+
+      - name: Extract unsigned release app
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p release-work
+          unzip -q "unsigned/LangSwitch-${version}-unsigned.zip" -d release-work
+
+      - name: Sign release app with stable identity
+        env:
+          SIGNING_CERTIFICATE_P12: ${{ secrets.MACOS_SIGNING_CERTIFICATE_P12 }}
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$SIGNING_CERTIFICATE_P12" || -z "$SIGNING_CERTIFICATE_PASSWORD" ]]; then
+            echo "The release-signing environment is missing its certificate secrets." >&2
+            exit 1
+          fi
+
+          app="release-work/LangSwitch.app"
+          certificate_path="$RUNNER_TEMP/LangSwitch-release-signing.p12"
+          certificate_pem="$RUNNER_TEMP/LangSwitch-release-signing.crt"
+          keychain_path="$RUNNER_TEMP/LangSwitch-release-signing.keychain-db"
+          keychain_password="$(openssl rand -base64 36 | tr -d '\n')"
+          expected_identity="25A630937F64C708694E847E5A4CD56374BFCB15"
+          original_keychains=()
+
+          while IFS= read -r keychain; do
+            keychain="${keychain//\"/}"
+            [[ -n "$keychain" ]] && original_keychains+=("$keychain")
+          done < <(security list-keychains -d user)
+
+          cleanup() {
+            security list-keychains -d user -s "${original_keychains[@]}" >/dev/null 2>&1 || true
+            security remove-trusted-cert -d "$certificate_pem" >/dev/null 2>&1 || true
+            security delete-keychain "$keychain_path" >/dev/null 2>&1 || true
+            rm -f "$certificate_path" "$certificate_pem"
+          }
+          trap cleanup EXIT
+
+          printf '%s' "$SIGNING_CERTIFICATE_P12" | base64 --decode > "$certificate_path"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 3600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path" "${original_keychains[@]}"
+          security import "$certificate_path" \
+            -k "$keychain_path" \
+            -P "$SIGNING_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            >/dev/null
+          security find-certificate \
+            -c "LangSwitch Release Signing" \
+            -p \
+            "$keychain_path" \
+            > "$certificate_pem"
+          security add-trusted-cert \
+            -d \
+            -r trustRoot \
+            -p codeSign \
+            -k "$keychain_path" \
+            "$certificate_pem"
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "$keychain_password" \
+            "$keychain_path" \
+            >/dev/null
+
+          identity="$(security find-identity -v -p codesigning "$keychain_path" | awk '/LangSwitch Release Signing/ { print $2; exit }')"
+          if [[ "$identity" != "$expected_identity" ]]; then
+            echo "Unexpected release-signing certificate: ${identity:-not found}." >&2
+            exit 1
+          fi
+
+          designated_requirement="designated => certificate leaf = H\"$expected_identity\" and identifier \"com.makhnevvitalik.LangSwitch\""
+          verification_requirement="certificate leaf = H\"$expected_identity\" and identifier \"com.makhnevvitalik.LangSwitch\""
+          codesign \
+            --force \
+            --sign "$identity" \
+            --keychain "$keychain_path" \
+            -r="$designated_requirement" \
+            --options runtime \
+            --timestamp=none \
+            --entitlements "unsigned/LangSwitch.entitlements" \
+            "$app"
+          codesign \
+            --verify \
+            --deep \
+            --strict \
+            --verbose=2 \
+            -R="$verification_requirement" \
+            "$app"
+
+      - name: Package signed release assets
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          app="release-work/LangSwitch.app"
+          archive="LangSwitch-${version}-macos-universal.zip"
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent "$app" "dist/$archive"
+          unzip -t "dist/$archive"
+          (cd dist && shasum -a 256 "$archive" > SHA256SUMS.txt)
 
       - name: Publish release
         env:
@@ -147,7 +248,7 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           archive="LangSwitch-${version}-macos-universal.zip"
-          notes="Download $archive for Apple Silicon or Intel Macs running macOS 11 or later. This build is ad-hoc signed and is not notarized by Apple; see the README for first-launch and Input Monitoring setup."
+          notes="Download $archive for Apple Silicon or Intel Macs running macOS 11 or later. This build is self-signed and is not notarized by Apple; see the README for first-launch and Input Monitoring setup."
           gh release create "$GITHUB_REF_NAME" \
             "dist/$archive#Universal macOS app" \
             "dist/SHA256SUMS.txt#SHA-256 checksum" \
