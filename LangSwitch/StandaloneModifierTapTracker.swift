@@ -21,7 +21,12 @@ struct StandaloneModifierTapTracker: KeyboardSwitchTrigger {
     private var pressStartedAt: TimeInterval?
     private var usedWithAnotherKey = false
 
-    let eventMask: NSEvent.EventTypeMask = [.flagsChanged, .keyDown]
+    var eventMask: NSEvent.EventTypeMask {
+        let keyboardEvents: NSEvent.EventTypeMask = [.flagsChanged, .keyDown]
+        return modifierFlag == .command
+            ? keyboardEvents.union([.leftMouseDown, .rightMouseDown, .otherMouseDown])
+            : keyboardEvents
+    }
 
     init(keyCodes: Set<UInt16>,
          modifierFlag: NSEvent.ModifierFlags,
@@ -52,7 +57,12 @@ struct StandaloneModifierTapTracker: KeyboardSwitchTrigger {
                                 modifierFlags: event.modifierFlags,
                                 timestamp: event.timestamp)
         case .keyDown:
-            keyDown(modifierFlags: event.modifierFlags)
+            markUsedInCombination(modifierFlags: event.modifierFlags)
+            return false
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            if modifierFlag == .command {
+                markUsedInCombination(modifierFlags: event.modifierFlags)
+            }
             return false
         default:
             return false
@@ -92,7 +102,7 @@ struct StandaloneModifierTapTracker: KeyboardSwitchTrigger {
         return false
     }
 
-    private mutating func keyDown(modifierFlags: NSEvent.ModifierFlags) {
+    private mutating func markUsedInCombination(modifierFlags: NSEvent.ModifierFlags) {
         guard !pressedKeyCodes.isEmpty else {
             return
         }

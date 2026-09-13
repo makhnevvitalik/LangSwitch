@@ -218,13 +218,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if #available(macOS 13.0, *) {
             do {
-                if isEnabled && SMAppService.mainApp.status != .enabled {
-                    try SMAppService.mainApp.register()
-                } else if !isEnabled && SMAppService.mainApp.status == .enabled {
-                    try SMAppService.mainApp.unregister()
+                let service = SMAppService.mainApp
+                if isEnabled {
+                    if service.status != .enabled && service.status != .requiresApproval {
+                        try service.register()
+                    }
+                    if service.status == .requiresApproval {
+                        showLaunchAtLoginApproval()
+                    }
+                } else if service.status == .enabled || service.status == .requiresApproval {
+                    try service.unregister()
                 }
             } catch {
                 showLaunchAtLoginError(error)
+            }
+        }
+    }
+
+    @available(macOS 13.0, *)
+    private func showLaunchAtLoginApproval() {
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+
+            let alert = NSAlert()
+            alert.messageText = "Allow LangSwitch to start at login"
+            alert.informativeText = "macOS needs your approval. Open Login Items in System Settings and enable LangSwitch."
+            alert.addButton(withTitle: "Open Login Items Settings")
+            alert.addButton(withTitle: "Later")
+
+            if alert.runModal() == .alertFirstButtonReturn {
+                SMAppService.openSystemSettingsLoginItems()
             }
         }
     }

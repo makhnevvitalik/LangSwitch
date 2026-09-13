@@ -10,6 +10,8 @@ import Foundation
 
 final class AboutWindowController: NSObject {
     private var aboutWindow: NSWindow?
+    private var checkUpdatesButton: NSButton?
+    private var isCheckingForUpdates = false
 
     func showWindow() {
         if aboutWindow == nil {
@@ -43,6 +45,7 @@ final class AboutWindowController: NSObject {
         let checkUpdatesButton = NSButton(title: "Check for Updates", target: self, action: #selector(checkForUpdates))
         checkUpdatesButton.frame = NSRect(x: (windowWidth - 170) / 2, y: 44, width: 170, height: 32)
         windowContent.addSubview(checkUpdatesButton)
+        self.checkUpdatesButton = checkUpdatesButton
 
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
                               styleMask: [.titled, .closable],
@@ -62,52 +65,63 @@ final class AboutWindowController: NSObject {
     }
 
     @objc private func checkForUpdates() {
-        guard let url = URL(string: "https://api.github.com/repos/makhnevvitalik/LangSwitch/releases/latest") else {
+        guard !isCheckingForUpdates,
+              let url = URL(string: "https://api.github.com/repos/makhnevvitalik/LangSwitch/releases/latest") else {
             return
         }
 
-        let task = URLSession.shared.dataTask(with: url) { [weak self] data, _, error in
-            guard let self else {
-                return
-            }
+        isCheckingForUpdates = true
+        checkUpdatesButton?.isEnabled = false
 
-            guard let data = data, error == nil else {
-                self.showAlert(message: "Failed to check for updates.")
-                return
-            }
-
-            do {
-                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                   let latestVersionTag = json["tag_name"] as? String {
-                    let currentVersionString = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0"
-
-                    guard let latestVersion = AppVersion(latestVersionTag),
-                          let currentVersion = AppVersion(currentVersionString) else {
-                        self.showAlert(message: "Error parsing update information.")
-                        return
-                    }
-
-                    if latestVersion > currentVersion {
-                        self.showAlert(message: "New version \(latestVersionTag) is available! Download it from GitHub.")
-                    } else {
-                        self.showAlert(message: "You're up to date.")
-                    }
-                } else {
-                    self.showAlert(message: "Error parsing update information.")
+        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                guard let self else {
+                    return
                 }
-            } catch {
-                self.showAlert(message: "Error parsing update information.")
+
+                defer {
+                    self.isCheckingForUpdates = false
+                    self.checkUpdatesButton?.isEnabled = true
+                }
+
+                let alert = NSAlert()
+                alert.messageText = self.updateCheckMessage(data: data, response: response, error: error)
+                alert.runModal()
             }
         }
         task.resume()
     }
 
-    private func showAlert(message: String) {
-        DispatchQueue.main.async {
-            let alert = NSAlert()
-            alert.messageText = message
-            alert.runModal()
+    private func updateCheckMessage(data: Data?, response: URLResponse?, error: Error?) -> String {
+        if error != nil {
+            return "Could not contact GitHub. Please try again."
         }
+
+        guard let response = response as? HTTPURLResponse else {
+            return "GitHub returned an invalid response. Please try again later."
+        }
+
+        guard (200...299).contains(response.statusCode) else {
+            return "GitHub returned HTTP \(response.statusCode). Please try again later."
+        }
+
+        guard let data,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let latestVersionTag = json["tag_name"] as? String,
+              let latestVersion = AppVersion(latestVersionTag) else {
+            return "GitHub returned invalid update information. Please try again later."
+        }
+
+        guard let currentVersionString = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+              let currentVersion = AppVersion(currentVersionString) else {
+            return "Could not determine the installed app version."
+        }
+
+        if latestVersion > currentVersion {
+            return "New version \(latestVersionTag) is available! Download it from GitHub."
+        }
+
+        return "You're up to date."
     }
 }
 
