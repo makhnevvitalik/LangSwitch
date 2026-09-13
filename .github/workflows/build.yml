@@ -1,0 +1,83 @@
+name: Xcode - Build and Analyze
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Universal macOS Release
+    runs-on: macos-26
+    timeout-minutes: 15
+    env:
+      DERIVED_DATA: ${{ runner.temp }}/LangSwitchBuild
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build and analyze
+        run: |
+          xcodebuild \
+            -project LangSwitch.xcodeproj \
+            -scheme LangSwitch \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$DERIVED_DATA" \
+            ARCHS='arm64 x86_64' \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build analyze
+
+      - name: Verify architectures and bundled licenses
+        run: |
+          app="$DERIVED_DATA/Build/Products/Release/LangSwitch.app"
+          lipo "$app/Contents/MacOS/LangSwitch" -verify_arch arm64 x86_64
+          cmp LICENSE "$app/Contents/Resources/LICENSE"
+          cmp THIRD_PARTY_NOTICES.md "$app/Contents/Resources/THIRD_PARTY_NOTICES.md"
+
+      - name: Verify update network permissions
+        run: |
+          xcodebuild \
+            -project LangSwitch.xcodeproj \
+            -scheme LangSwitch \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGNING_ALLOWED=NO \
+            -showBuildSettings -json > "$RUNNER_TEMP/langswitch-build-settings.json"
+
+          python3 - <<'PY'
+          import json
+          import os
+          import plistlib
+          from pathlib import Path
+
+          settings_file = Path(os.environ['RUNNER_TEMP']) / 'langswitch-build-settings.json'
+          targets = json.loads(settings_file.read_text())
+          settings = next(item['buildSettings'] for item in targets if item['target'] == 'LangSwitch')
+          assert settings['ENABLE_APP_SANDBOX'] == 'YES', 'App Sandbox must remain enabled'
+          assert settings['ENABLE_OUTGOING_NETWORK_CONNECTIONS'] == 'YES', 'Update checks need outgoing networking'
+          entitlements_path = Path(settings['SRCROOT']) / settings['CODE_SIGN_ENTITLEMENTS']
+          entitlements = plistlib.loads(entitlements_path.read_bytes())
+          assert entitlements.get('com.apple.security.app-sandbox') is True, 'Missing sandbox entitlement'
+          assert entitlements.get('com.apple.security.network.client') is True, 'Missing update network entitlement'
+          print('Update network permissions verified')
+          PY
