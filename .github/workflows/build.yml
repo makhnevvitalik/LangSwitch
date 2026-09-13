@@ -1,8 +1,10 @@
-name: Xcode - Build and Analyze
+name: Xcode - Build, Analyze and Release
 
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*'
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -16,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    name: Universal macOS Release
+    name: Universal macOS Build
     runs-on: macos-26
     timeout-minutes: 15
     env:
@@ -81,3 +83,75 @@ jobs:
           assert entitlements.get('com.apple.security.network.client') is True, 'Missing update network entitlement'
           print('Update network permissions verified')
           PY
+
+      - name: Prepare release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must use the vMAJOR.MINOR.PATCH format." >&2
+            exit 1
+          fi
+
+          app="$DERIVED_DATA/Build/Products/Release/LangSwitch.app"
+          version="${GITHUB_REF_NAME#v}"
+          app_version="$(plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist")"
+          if [[ "$app_version" != "$version" ]]; then
+            echo "Tag $GITHUB_REF_NAME does not match app version $app_version." >&2
+            exit 1
+          fi
+
+          codesign \
+            --force \
+            --sign - \
+            --options runtime \
+            --entitlements LangSwitch/LangSwitch.entitlements \
+            "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+
+          mkdir -p dist
+          archive="LangSwitch-${version}-macos-universal.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "dist/$archive"
+          unzip -t "dist/$archive"
+          (cd dist && shasum -a 256 "$archive" > SHA256SUMS.txt)
+
+      - name: Upload release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-assets
+          path: |
+            dist/LangSwitch-*-macos-universal.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-assets
+          path: dist
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          archive="LangSwitch-${version}-macos-universal.zip"
+          notes="Download $archive for Apple Silicon or Intel Macs running macOS 11 or later. This build is ad-hoc signed and is not notarized by Apple; see the README for first-launch and Input Monitoring setup."
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/$archive#Universal macOS app" \
+            "dist/SHA256SUMS.txt#SHA-256 checksum" \
+            --verify-tag \
+            --generate-notes \
+            --title "LangSwitch $version" \
+            --notes "$notes"
