@@ -20,7 +20,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 15
     env:
-      DERIVED_DATA: ${{ runner.temp }}/LangSwitchBuild
+      DERIVED_DATA: .build/ci
     defaults:
       run:
         shell: bash
