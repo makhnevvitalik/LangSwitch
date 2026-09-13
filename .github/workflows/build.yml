@@ -114,7 +114,7 @@ jobs:
 
       - name: Upload unsigned release app
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: unsigned-release-app
           path: |
@@ -134,7 +134,7 @@ jobs:
       contents: write
     steps:
       - name: Download unsigned release app
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: unsigned-release-app
           path: unsigned
@@ -160,8 +160,10 @@ jobs:
           app="release-work/LangSwitch.app"
           certificate_path="$RUNNER_TEMP/LangSwitch-release-signing.p12"
           certificate_pem="$RUNNER_TEMP/LangSwitch-release-signing.crt"
+          certificate_der="$RUNNER_TEMP/LangSwitch-release-signing.der"
           keychain_path="$RUNNER_TEMP/LangSwitch-release-signing.keychain-db"
           keychain_password="$(openssl rand -base64 36 | tr -d '\n')"
+          trust_tool="$RUNNER_TEMP/langswitch-trust-certificate"
           expected_identity="25A630937F64C708694E847E5A4CD56374BFCB15"
           original_keychains=()
 
@@ -175,9 +177,8 @@ jobs:
 
           cleanup() {
             security list-keychains -d user -s "${original_keychains[@]}" >/dev/null 2>&1 || true
-            security remove-trusted-cert "$certificate_pem" >/dev/null 2>&1 || true
             security delete-keychain "$keychain_path" >/dev/null 2>&1 || true
-            rm -f "$certificate_path" "$certificate_pem"
+            rm -f "$certificate_path" "$certificate_pem" "$certificate_der" "$trust_tool"
           }
           trap cleanup EXIT
 
@@ -196,11 +197,9 @@ jobs:
             -p \
             "$keychain_path" \
             > "$certificate_pem"
-          security add-trusted-cert \
-            -r trustRoot \
-            -p codeSign \
-            -k "$keychain_path" \
-            "$certificate_pem"
+          openssl x509 -in "$certificate_pem" -outform DER -out "$certificate_der"
+          swiftc -suppress-warnings .github/scripts/trust-certificate.swift -o "$trust_tool"
+          sudo "$trust_tool" "$certificate_der"
           security set-key-partition-list \
             -S apple-tool:,apple: \
             -s \
