@@ -166,7 +166,10 @@ jobs:
           original_keychains=()
 
           while IFS= read -r keychain; do
-            keychain="${keychain//\"/}"
+            keychain="${keychain#"${keychain%%[![:space:]]*}"}"
+            keychain="${keychain%"${keychain##*[![:space:]]}"}"
+            keychain="${keychain#\"}"
+            keychain="${keychain%\"}"
             [[ -n "$keychain" ]] && original_keychains+=("$keychain")
           done < <(security list-keychains -d user)
 
